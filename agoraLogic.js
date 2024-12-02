@@ -1,102 +1,105 @@
 import AgoraRTC from "agora-rtc-sdk-ng";
 
-let rtc = {
-    // For the local audio and video tracks.
-    localAudioTrack: null,
-    localVideoTrack: null,
-    client: null,
-};
-let options = {
-    // Pass your app ID here.
-    appId: "97de427d25754b63b4c3b56e40f8a45c",
-    // Set the channel name.
-    channel: "main",
-    // Use a temp token
-    token: "007eJxTYKhazbji7mufnkV7Opodq0IYmpK2+/x+stYx7JPlK+aJ4a8UGCzNU1JNjMxTjEzNTU2SzIyTTJKNk0zNUk0M0iwSTUyT+9b4pDcEMjL8u3uZmZEBAkF8FobcxMw8BgYAwkMhow==",
-    // Set the user ID.
-    uid: 123456,
-};
+const APP_ID = "97de427d25754b63b4c3b56e40f8a45c"
+const TOKEN = "007eJxTYFjmKNS6+sTRrf9lOvZ7SJqvftZbvlZXRic366lI5fQ5Eu4KDJbmKakmRuYpRqbmpiZJZsZJJsnGSaZmqSYGaRaJJqbJl174pjcEMjJEC1xnZmSAQBCfhSE3MTOPgQEAJvse1Q=="
+const CHANNEL = "main"
 
-async function startBasicCall() {
-    // Create an AgoraRTCClient object.
-    rtc.client = AgoraRTC.createClient({mode: "rtc", codec: "vp8"});
-    // Listen for the "user-published" event, from which you can get an AgoraRTCRemoteUser object.
-    rtc.client.on("user-published", async (user, mediaType) => {
-        // Subscribe to the remote user when the SDK triggers the "user-published" event
-        await rtc.client.subscribe(user, mediaType);
-        console.log("subscribe success");
-        // If the remote user publishes a video track.
-        if (mediaType === "video") {
-            // Get the RemoteVideoTrack object in the AgoraRTCRemoteUser object.
-            const remoteVideoTrack = user.videoTrack;
-            // Dynamically create a container in the form of a DIV element for playing the remote video track.
-            const remotePlayerContainer = document.createElement("div");
-            // Specify the ID of the DIV container. You can use the uid of the remote user.
-            remotePlayerContainer.id = user.uid.toString();
-            remotePlayerContainer.textContent = "Remote user " + user.uid.toString();
-            remotePlayerContainer.style.width = "640px";
-            remotePlayerContainer.style.height = "480px";
-            document.body.append(remotePlayerContainer);
-            // Play the remote video track.
-            // Pass a DIV container and the SDK dynamically creates a player in the container for playing the remote video track.
-            remoteVideoTrack.play(remotePlayerContainer);
-        }
-        // If the remote user publishes an audio track.
-        if (mediaType === "audio") {
-            // Get the RemoteAudioTrack object in the AgoraRTCRemoteUser object.
-            const remoteAudioTrack = user.audioTrack;
-            // Play the remote audio track. No need to pass any DOM element.
-            remoteAudioTrack.play();
-        }
-        // Listen for the "user-unpublished" event
-        rtc.client.on("user-unpublished", user => {
-            // Get the dynamically created DIV container.
-            const remotePlayerContainer = document.getElementById(user.uid);
-            // Destroy the container.
-            remotePlayerContainer.remove();
-        });
-    });
-    window.onload = function () {
-        document.getElementById("join").onclick = async function () {
-            // Join an RTC channel.
-            await rtc.client.join(options.appId, options.channel, options.token, options.uid);
-            // Create a local audio track from the audio sampled by a microphone.
-            rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-            // Create a local video track from the video captured by a camera.
-            rtc.localVideoTrack = await AgoraRTC.createCameraVideoTrack();
-            // Publish the local audio and video tracks to the RTC channel.
-            await rtc.client.publish([rtc.localAudioTrack, rtc.localVideoTrack]);
-            // Dynamically create a container in the form of a DIV element for playing the local video track.
-            const localPlayerContainer = document.createElement("div");
-            // Specify the ID of the DIV container. You can use the uid of the local user.
-            localPlayerContainer.id = options.uid;
-            localPlayerContainer.textContent = "Local user " + options.uid;
-            localPlayerContainer.style.width = "640px";
-            localPlayerContainer.style.height = "480px";
-            document.body.append(localPlayerContainer);
-            // Play the local video track.
-            // Pass the DIV container and the SDK dynamically creates a player in the container for playing the local video track.
-            rtc.localVideoTrack.play(localPlayerContainer);
-            console.log("publish success!");
-        };
-        document.getElementById("leave").onclick = async function () {
-            // Destroy the local audio and video tracks.
-            rtc.localAudioTrack.close();
-            rtc.localVideoTrack.close();
-            // Remove the container for the local video track.
-            const localPlayerContainer = document.getElementById(options.uid);
-            if (localPlayerContainer) {
-                localPlayerContainer.remove();
-            }
-            // Traverse all remote users.
-            rtc.client.remoteUsers.forEach(user => {
-                // Destroy the dynamically created DIV containers.
-                const playerContainer = document.getElementById(user.uid);
-                playerContainer && playerContainer.remove();
-            });
-            // Leave the channel.
-            await rtc.client.leave();
-        };
-    };
+const client = AgoraRTC.createClient({mode:'rtc', codec:'vp8'})
+
+let localTracks = []
+let remoteUsers = {}
+
+let joinAndDisplayLocalStream = async () => {
+
+    client.on('user-published', handleUserJoined)
+    
+    client.on('user-left', handleUserLeft)
+    
+    let UID = await client.join(APP_ID, CHANNEL, TOKEN, null)
+
+    localTracks = await AgoraRTC.createMicrophoneAndCameraTracks() 
+
+    let player = `<div class="video-container" id="user-container-${UID}">
+                        <div class="video-player" id="user-${UID}"></div>
+                  </div>`
+    document.getElementById('video-streams').insertAdjacentHTML('beforeend', player)
+
+    localTracks[1].play(`user-${UID}`)
+    
+    await client.publish([localTracks[0], localTracks[1]])
 }
-startBasicCall();
+
+let joinStream = async () => {
+    await joinAndDisplayLocalStream()
+    document.getElementById('join-btn').style.display = 'none'
+    document.getElementById('stream-controls').style.display = 'flex'
+}
+
+let handleUserJoined = async (user, mediaType) => {
+    remoteUsers[user.uid] = user 
+    await client.subscribe(user, mediaType)
+
+    if (mediaType === 'video'){
+        let player = document.getElementById(`user-container-${user.uid}`)
+        if (player != null){
+            player.remove()
+        }
+
+        player = `<div class="video-container" id="user-container-${user.uid}">
+                        <div class="video-player" id="user-${user.uid}"></div> 
+                 </div>`
+        document.getElementById('video-streams').insertAdjacentHTML('beforeend', player)
+
+        user.videoTrack.play(`user-${user.uid}`)
+    }
+
+    if (mediaType === 'audio'){
+        user.audioTrack.play()
+    }
+}
+
+let handleUserLeft = async (user) => {
+    delete remoteUsers[user.uid]
+    document.getElementById(`user-container-${user.uid}`).remove()
+}
+
+let leaveAndRemoveLocalStream = async () => {
+    for(let i = 0; localTracks.length > i; i++){
+        localTracks[i].stop()
+        localTracks[i].close()
+    }
+
+    await client.leave()
+    document.getElementById('join-btn').style.display = 'block'
+    document.getElementById('stream-controls').style.display = 'none'
+    document.getElementById('video-streams').innerHTML = ''
+}
+
+let toggleMic = async (e) => {
+    if (localTracks[0].muted){
+        await localTracks[0].setMuted(false)
+        e.target.innerText = 'Mic on'
+        e.target.style.backgroundColor = 'cadetblue'
+    }else{
+        await localTracks[0].setMuted(true)
+        e.target.innerText = 'Mic off'
+        e.target.style.backgroundColor = '#EE4B2B'
+    }
+}
+
+let toggleCamera = async (e) => {
+    if(localTracks[1].muted){
+        await localTracks[1].setMuted(false)
+        e.target.innerText = 'Camera on'
+        e.target.style.backgroundColor = 'cadetblue'
+    }else{
+        await localTracks[1].setMuted(true)
+        e.target.innerText = 'Camera off'
+        e.target.style.backgroundColor = '#EE4B2B'
+    }
+}
+
+document.getElementById('join-btn').addEventListener('click', joinStream)
+document.getElementById('leave-btn').addEventListener('click', leaveAndRemoveLocalStream)
+document.getElementById('mic-btn').addEventListener('click', toggleMic)
+document.getElementById('camera-btn').addEventListener('click', toggleCamera)
