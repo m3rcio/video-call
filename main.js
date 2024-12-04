@@ -1,7 +1,6 @@
-import AgoraRTC from "agora-rtc-sdk-ng";
 
 const APP_ID = "97de427d25754b63b4c3b56e40f8a45c"
-const TOKEN = "007eJxTYFjmKNS6+sTRrf9lOvZ7SJqvftZbvlZXRic366lI5fQ5Eu4KDJbmKakmRuYpRqbmpiZJZsZJJsnGSaZmqSYGaRaJJqbJl174pjcEMjJEC1xnZmSAQBCfhSE3MTOPgQEAJvse1Q=="
+const TOKEN = "007eJxTYCjl+PDFQ83q0UVGH+tveVHtTD+OOaaveN534vM9hhM6aiEKDJbmKakmRuYpRqbmpiZJZsZJJsnGSaZmqSYGaRaJJqbJE1z80xsCGRmCdxuwMDJAIIjPwpCbmJnHwAAAU7gfDA=="
 const CHANNEL = "main"
 
 const client = AgoraRTC.createClient({mode:'rtc', codec:'vp8'})
