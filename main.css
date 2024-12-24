@@ -1,5 +1,5 @@
 body{
-    background:#d5f021;
+    background:#502bf5;
 
 }
 
@@ -24,7 +24,7 @@ body{
 .video-container{
     max-height: 100%;
     border: 2px solid black;
-    background-color: #fff312;
+    background-color: none;
 }
 
 .video-player{
@@ -34,12 +34,13 @@ body{
 
 button{
     border:none;
-    background-color: rgb(100, 6, 132);
-    color:#fff;
-    padding:10px 20px;
+    color: white;
+    background-color: hsl(261, 75%, 32%);
+    padding:15px 20px;
     font-size:16px;
     margin:2px;
     cursor: pointer;
+    border-radius: 8px;
 }
 
 #stream-controls{
@@ -54,3 +55,45 @@ button{
         width: 95%;
     }
 }
+
+
+#join-btn {
+    z-index: 1;
+    /* position: relative; */
+    /* font-size: inherit; */
+    /* font-family: inherit; */
+    color: white;
+    /* padding: 0.5em 1em; */
+    outline: none;
+    border: none;
+    background-color: hsl(261, 75%, 32%);
+    overflow: hidden;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: color 0.4s ease-in-out;
+  }
+
+
+#join-btn::before {
+    content: '';
+    z-index: -1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1em;
+    height: 1em;
+    border-radius: 50%;
+    background-color: #2d84f7;
+    transform-origin: center;
+    transform: translate3d(-50%, -50%, 0) scale3d(0, 0, 0);
+    transition: transform 0.45s ease-in-out;
+  }
+  
+  #join-btn:hover {
+    cursor: pointer;
+    color: #ffffff;
+  }
+  
+  #join-btn:hover::before {
+    transform: translate3d(-50%, -50%, 0) scale3d(15, 15, 15);
+  }
